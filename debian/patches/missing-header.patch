@@ -1,0 +1,12 @@
+Index: flatbuffers/tests/reflection_test.h
+===================================================================
+--- flatbuffers.orig/tests/reflection_test.h
++++ flatbuffers/tests/reflection_test.h
+@@ -2,6 +2,7 @@
+ #define TESTS_REFLECTION_TEST_H
+ 
+ #include <string>
++#include <cstdint>
+ 
+ namespace flatbuffers {
+ namespace tests {
