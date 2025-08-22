@@ -1,14 +1,17 @@
 #include "monster_test.h"
 
+#include <limits>
 #include <vector>
 
+#include "flatbuffers/base.h"
 #include "flatbuffers/flatbuffer_builder.h"
+#include "flatbuffers/flatbuffers.h"
 #include "flatbuffers/idl.h"
 #include "flatbuffers/registry.h"
 #include "flatbuffers/verifier.h"
+#include "is_quiet_nan.h"
 #include "monster_extra_generated.h"
 #include "monster_test_generated.h"
-#include "is_quiet_nan.h"
 #include "test_assert.h"
 
 namespace flatbuffers {
@@ -170,7 +173,7 @@ flatbuffers::DetachedBuffer CreateFlatBufferTest(std::string &buffer) {
 
   FinishMonsterBuffer(builder, mloc);
 
-// clang-format off
+  // clang-format off
   #ifdef FLATBUFFERS_TEST_VERBOSE
   // print byte data for debugging:
   auto p = builder.GetBufferPointer();
@@ -195,7 +198,7 @@ void AccessFlatBufferTest(const uint8_t *flatbuf, size_t length, bool pooled) {
   verifier.SetFlexReuseTracker(&flex_reuse_tracker);
   TEST_EQ(VerifyMonsterBuffer(verifier), true);
 
-// clang-format off
+  // clang-format off
   #ifdef FLATBUFFERS_TRACK_VERIFIER_BUFFER_SIZE
     std::vector<uint8_t> test_buff;
     test_buff.resize(length * 2);
@@ -421,8 +424,8 @@ void MutateFlatBuffersTest(uint8_t *flatbuf, std::size_t length) {
 
   // Mutate structs.
   auto pos = monster->mutable_pos();
-  auto test3 = pos->mutable_test3();  // Struct inside a struct.
-  test3.mutate_a(50);                 // Struct fields never fail.
+  auto &test3 = pos->mutable_test3();  // Struct inside a struct.
+  test3.mutate_a(50);                  // Struct fields never fail.
   TEST_EQ(test3.a(), 50);
   test3.mutate_a(10);
 
@@ -438,6 +441,15 @@ void MutateFlatBuffersTest(uint8_t *flatbuf, std::size_t length) {
   first->mutate_hp(0);
   TEST_EQ(first->hp(), 0);
   first->mutate_hp(1000);
+
+  // Test for each loop over mutable entries
+  for (auto item : *tables) {
+    TEST_EQ(item->hp(), 1000);
+    item->mutate_hp(0);
+    TEST_EQ(item->hp(), 0);
+    item->mutate_hp(1000);
+    break;  // one iteration is enough, just testing compilation
+  }
 
   // Mutate via LookupByKey
   TEST_NOTNULL(tables->MutableLookupByKey("Barney"));
@@ -497,7 +509,7 @@ void ObjectFlatBuffersTest(uint8_t *flatbuf) {
   CheckMonsterObject(monster2.get());
 
   // Test object copy.
-  auto monster3 = *monster2;
+  MonsterT monster3 = *monster2;
   flatbuffers::FlatBufferBuilder fbb3;
   fbb3.Finish(CreateMonster(fbb3, &monster3, &rehasher), MonsterIdentifier());
   const auto len3 = fbb3.GetSize();
@@ -568,11 +580,31 @@ void SizePrefixedTest() {
   flatbuffers::Verifier verifier(fbb.GetBufferPointer(), fbb.GetSize());
   TEST_EQ(VerifySizePrefixedMonsterBuffer(verifier), true);
 
+  // The prefixed size doesn't include itself, so substract the size of the
+  // prefix
+  TEST_EQ(GetPrefixedSize(fbb.GetBufferPointer()),
+          fbb.GetSize() - sizeof(uoffset_t));
+
+  // Getting the buffer length does include the prefix size, so it should be the
+  // full lenght.
+  TEST_EQ(GetSizePrefixedBufferLength(fbb.GetBufferPointer()), fbb.GetSize());
+
   // Access it.
   auto m = GetSizePrefixedMonster(fbb.GetBufferPointer());
   TEST_EQ(m->mana(), 200);
   TEST_EQ(m->hp(), 300);
   TEST_EQ_STR(m->name()->c_str(), "bob");
+
+  {
+    // Verify that passing a larger size is OK, but not a smaller
+    flatbuffers::Verifier verifier_larger(fbb.GetBufferPointer(),
+                                          fbb.GetSize() + 10);
+    TEST_EQ(VerifySizePrefixedMonsterBuffer(verifier_larger), true);
+
+    flatbuffers::Verifier verifier_smaller(fbb.GetBufferPointer(),
+                                           fbb.GetSize() - 10);
+    TEST_EQ(VerifySizePrefixedMonsterBuffer(verifier_smaller), false);
+  }
 }
 
 void TestMonsterExtraFloats(const std::string &tests_data_path) {
@@ -614,8 +646,8 @@ void TestMonsterExtraFloats(const std::string &tests_data_path) {
   TEST_EQ(def_extra->d2(), +infinity_d);
   TEST_EQ(def_extra->d3(), -infinity_d);
   std::string jsongen;
-  auto result = GenerateText(parser, def_obj, &jsongen);
-  TEST_EQ(result, true);
+  auto result = GenText(parser, def_obj, &jsongen);
+  TEST_NULL(result);
   // Check expected default values.
   TEST_EQ(std::string::npos != jsongen.find("f0: nan"), true);
   TEST_EQ(std::string::npos != jsongen.find("f1: nan"), true);
@@ -715,7 +747,7 @@ void TypeAliasesTest() {
 
 // example of parsing text straight into a buffer, and generating
 // text back from it:
-void ParseAndGenerateTextTest(const std::string& tests_data_path, bool binary) {
+void ParseAndGenerateTextTest(const std::string &tests_data_path, bool binary) {
   // load FlatBuffer schema (.fbs) and JSON from disk
   std::string schemafile;
   std::string jsonfile;
@@ -764,9 +796,8 @@ void ParseAndGenerateTextTest(const std::string& tests_data_path, bool binary) {
   // to ensure it is correct, we now generate text back from the binary,
   // and compare the two:
   std::string jsongen;
-  auto result =
-      GenerateText(parser, parser.builder_.GetBufferPointer(), &jsongen);
-  TEST_EQ(result, true);
+  auto result = GenText(parser, parser.builder_.GetBufferPointer(), &jsongen);
+  TEST_NULL(result);
   TEST_EQ_STR(jsongen.c_str(), jsonfile.c_str());
 
   // We can also do the above using the convenient Registry that knows about
@@ -804,10 +835,39 @@ void ParseAndGenerateTextTest(const std::string& tests_data_path, bool binary) {
   // request natural printing for utf-8 strings
   parser.opts.natural_utf8 = true;
   parser.opts.strict_json = true;
-  TEST_EQ(
-      GenerateText(parser, parser.builder_.GetBufferPointer(), &jsongen_utf8),
-      true);
+  TEST_NULL(GenText(parser, parser.builder_.GetBufferPointer(), &jsongen_utf8));
   TEST_EQ_STR(jsongen_utf8.c_str(), jsonfile_utf8.c_str());
+}
+
+void UnPackTo(const uint8_t *flatbuf) {
+  // Get a monster that has a name and no enemy
+  auto orig_monster = GetMonster(flatbuf);
+  TEST_EQ_STR(orig_monster->name()->c_str(), "MyMonster");
+  TEST_ASSERT(orig_monster->enemy() == nullptr);
+
+  // Create an enemy
+  MonsterT *enemy = new MonsterT();
+  enemy->name = "Enemy";
+
+  // And create another monster owning the enemy,
+  MonsterT mon;
+  mon.name = "I'm monster 1";
+  mon.enemy.reset(enemy);
+  TEST_ASSERT(mon.enemy != nullptr);
+
+  // Assert that all the Monster objects are correct.
+  TEST_EQ_STR(mon.name.c_str(), "I'm monster 1");
+  TEST_EQ_STR(enemy->name.c_str(), "Enemy");
+  TEST_EQ_STR(mon.enemy->name.c_str(), "Enemy");
+
+  // Now unpack monster ("MyMonster") into monster
+  orig_monster->UnPackTo(&mon);
+
+  // Monster name should be from monster
+  TEST_EQ_STR(mon.name.c_str(), "MyMonster");
+
+  // The monster shouldn't have any enemies, because monster didn't.
+  TEST_ASSERT(mon.enemy == nullptr);
 }
 
 }  // namespace tests

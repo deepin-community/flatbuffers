@@ -1,8 +1,53 @@
-flatbuffers (2.0.8+dfsg1-6) unstable; urgency=medium
+flatbuffers (23.5.26+dfsg-4) unstable; urgency=medium
 
-  * d/control: Fix Breaks and Replaces. (Closes: #1043102)
+  * Fix FTBFS due to setuptools (>= 78) feature deprecation. (Closes: #1103212)
 
- -- Nobuhiro Iwamatsu <iwamatsu@debian.org>  Sun, 06 Aug 2023 17:28:38 +0900
+ -- Mo Zhou <lumin@debian.org>  Wed, 16 Apr 2025 11:46:28 -0400
+
+flatbuffers (23.5.26+dfsg-3) unstable; urgency=medium
+
+  [ Bardia Moshiri ]
+  * debian: build with position independent code
+
+ -- Mo Zhou <lumin@debian.org>  Fri, 11 Apr 2025 09:00:50 -0400
+
+flatbuffers (23.5.26+dfsg-2) unstable; urgency=medium
+
+  * Enable pristine-tar in gbp.conf.
+  * Add several autopkgtest test cases using upstream samples.
+  * Apply wrap-and-sort.
+  * Bump Standards-Version to 4.7.2 (no change needed).
+
+ -- Mo Zhou <lumin@debian.org>  Thu, 27 Feb 2025 22:36:17 -0500
+
+flatbuffers (23.5.26+dfsg-1.1) unstable; urgency=high
+
+  * Non-maintainer upload.
+  * debian/control: Update the version range of Breaks/Replaces so
+    that all the past versions of libflatbuffers2 are covered.
+    (really closes: #1043102)
+
+ -- Boyuan Yang <byang@debian.org>  Fri, 19 Jul 2024 22:36:52 -0400
+
+flatbuffers (23.5.26+dfsg-1) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- Mo Zhou <lumin@debian.org>  Sat, 13 Jul 2024 02:50:50 -0400
+
+flatbuffers (23.5.26+dfsg-1~exp1) experimental; urgency=medium
+
+  * Patch code to fix tests on mips64el and hppa.
+  * Specify Breaks+Replaces for the lib package as well. (Closes: #1043244)
+  * Fix ftbfs-source-after-build. (Closes: #1044425)
+
+ -- Mo Zhou <lumin@debian.org>  Fri, 29 Dec 2023 16:38:36 -0500
+
+flatbuffers (23.5.26+dfsg-1~exp0) experimental; urgency=medium
+
+  * New upstream version 23.5.26+dfsg.
+
+ -- Nobuhiro Iwamatsu <iwamatsu@debian.org>  Sun, 06 Aug 2023 12:52:16 +0900
 
 flatbuffers (2.0.8+dfsg1-5) unstable; urgency=medium
 

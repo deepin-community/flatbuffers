@@ -1,19 +1,21 @@
 #include "reflection_test.h"
+
 #include "arrays_test_generated.h"
 #include "flatbuffers/minireflect.h"
 #include "flatbuffers/reflection.h"
 #include "flatbuffers/reflection_generated.h"
 #include "flatbuffers/verifier.h"
-#include "test_assert.h"
 #include "monster_test.h"
 #include "monster_test_generated.h"
+#include "test_assert.h"
 
 namespace flatbuffers {
 namespace tests {
 
 using namespace MyGame::Example;
 
-void ReflectionTest(const std::string& tests_data_path, uint8_t *flatbuf, size_t length) {
+void ReflectionTest(const std::string &tests_data_path, uint8_t *flatbuf,
+                    size_t length) {
   // Load a binary schema.
   std::string bfbsfile;
   TEST_EQ(flatbuffers::LoadFile((tests_data_path + "monster_test.bfbs").c_str(),
@@ -266,10 +268,14 @@ void MiniReflectFlatBuffersTest(uint8_t *flatbuf) {
       "}, "
       "{ name: \"Wilma\" } ], "
       // TODO(wvo): should really print this nested buffer correctly.
-      "testnestedflatbuffer: [ 20, 0, 0, 0, 77, 79, 78, 83, 12, 0, 12, 0, 0, "
-      "0, "
-      "4, 0, 6, 0, 8, 0, 12, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 13, 0, 0, 0, 78, "
-      "101, 115, 116, 101, 100, 77, 111, 110, 115, 116, 101, 114, 0, 0, 0 ], "
+      "testnestedflatbuffer: [ 124, 0, 0, 0, 77, 79, 78, 83, 0, 0, 114, 0, 16, "
+      "0, 0, 0, 4, 0, 6, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "
+      "0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "
+      "0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "
+      "0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "
+      "0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 114, 0, 0, 0, 0, 0, 0, 0, "
+      "8, 0, 0, 0, 0, 0, 192, 127, 13, 0, 0, 0, 78, 101, 115, 116, 101, 100, "
+      "77, 111, 110, 115, 116, 101, 114, 0, 0, 0 ], "
       "testarrayofstring2: [ \"jane\", \"mary\" ], "
       "testarrayofsortedstruct: [ { id: 0, distance: 0 }, "
       "{ id: 2, distance: 20 }, { id: 3, distance: 30 }, "
@@ -277,7 +283,8 @@ void MiniReflectFlatBuffersTest(uint8_t *flatbuf) {
       "flex: [ 210, 4, 5, 2 ], "
       "test5: [ { a: 10, b: 20 }, { a: 30, b: 40 } ], "
       "vector_of_enums: [ Blue, Green ], "
-      "scalar_key_sorted_tables: [ { id: \"miss\" } ] "
+      "scalar_key_sorted_tables: [ { id: \"miss\" } ], "
+      "nan_default: nan "
       "}");
 
   Test test(16, 32);
